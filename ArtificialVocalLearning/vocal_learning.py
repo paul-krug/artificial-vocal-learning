@@ -240,6 +240,7 @@ class Agent():
 				category_losses = { x.phoneme_identity: np.inf for x in self.optimization_states },
 				phoneme_losses = { x.phoneme_identity: np.inf for x in self.optimization_states },
 				visual_losses = { x.phoneme_identity: np.inf for x in self.optimization_states },
+				phoneme_recognition_states = { x.phoneme_identity: None for x in self.optimization_states },
 				supra_glottal_sequence = None,
 				glottal_sequence = None,
 				)
@@ -462,9 +463,11 @@ class Agent():
 		#main_losses = np.array( [ self.calculate_phoneme_loss( audio_in, x.phoneme_state ) for audio_in, x in zip( audio_segments, self.optimization_states ) ] )
 		phoneme_losses = []
 		category_losses = []
+		phoneme_recognition_states = []
 		for audio_segment, x in zip( audio_segments, self.optimization_states ):
 			X_input = preprocess( audio_in = audio_segment )
 			y_pred = self.phoneme_recognition_model.predict( X_input )[0]
+			phoneme_recognition_states.append( y_pred )
 			y_true = x.phoneme_state
 			phoneme_losses.append( self.phoneme_loss_function( y_true, y_pred ).numpy() )
 			y_pred_category = np.argmax( y_pred )
@@ -476,7 +479,7 @@ class Agent():
 				category_losses.append( 0 )
 			else:
 				category_losses.append( 1 )
-		return phoneme_losses, category_losses
+		return phoneme_losses, category_losses, phoneme_recognition_states
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 	def calculate_visual_losses(
 		self,
@@ -598,7 +601,7 @@ class Agent():
 		#stop
 		#audio_in = query[0][ int( 0.0 * 16000 ) : int( 0.15 * 16000 ) ] # 0.0, 0.15 for vowels, cons: 0.075, 0.225
 
-		phoneme_losses, category_losses = self.calculate_phoneme_losses( audio_signal )
+		phoneme_losses, category_losses, phoneme_recognition_states = self.calculate_phoneme_losses( audio_signal )
 
 		#audio_segments = [ query[0][ int( seg_min * 16000 ) : int( seg_max * 16000 ) ] for seg_min, seg_max in self.phoneme_segments ]
 		#main_losses = np.array( [ self.calculate_phoneme_loss( audio_in, x.phoneme_state ) for audio_in, x in zip( audio_segments, self.optimization_states ) ] )
@@ -620,6 +623,7 @@ class Agent():
 					category_losses = { x.phoneme_identity: y for x, y in zip( self.optimization_states, category_losses ) },
 					phoneme_losses = { x.phoneme_identity: y for x, y in zip( self.optimization_states, phoneme_losses ) },
 					visual_losses = { x.phoneme_identity: y for x, y in zip( self.optimization_states, visual_losses ) },
+					phoneme_recognition_states = { x.phoneme_identity: y for x, y in zip( self.optimization_states, phoneme_recognition_states ) },
 					supra_glottal_sequence = supra_glottal_sequence,
 					glottal_sequence = glottal_sequence,
 					)
@@ -635,6 +639,7 @@ class Agent():
 					category_losses = { x.phoneme_identity: y for x, y in zip( self.optimization_states, category_losses ) },
 					phoneme_losses = { x.phoneme_identity: y for x, y in zip( self.optimization_states, phoneme_losses ) },
 					visual_losses = { x.phoneme_identity: y for x, y in zip( self.optimization_states, visual_losses ) },
+					phoneme_recognition_states = { x.phoneme_identity: y for x, y in zip( self.optimization_states, phoneme_recognition_states ) },
 					supra_glottal_sequence = supra_glottal_sequence,
 					glottal_sequence = glottal_sequence,
 					)
@@ -808,5 +813,5 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	#demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ x for x in range( 0, 10 ) ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
-	demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ 15 ], synthesis_steps = 100, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
+	demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ 15 ], synthesis_steps = 100, out_path = 'demo/CONSONANT_VTL_PRESET_VOWELS/' )
 	#demo_print( optimize_units = [ [ 'z', 'i' ], [ 'n', 'i' ] ], runs = [ 0 ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )

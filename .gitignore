@@ -14,6 +14,7 @@ dist/
 downloads/
 results/
 demo/
+demo_run/
 demo_results/
 eggs/
 .eggs/

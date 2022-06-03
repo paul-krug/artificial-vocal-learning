@@ -219,7 +219,7 @@ class Agent():
 		optimization_policy,
 		optimization_policy_kw,
 		log_dir: str,
-		early_stopping = 25,
+		max_synthesis_steps,
 		):
 		self.optimization_states = optimization_states
 
@@ -248,7 +248,7 @@ class Agent():
 		#self.fmin = [ [ -1, np.inf ] ]
 		#self.fmin_states = []
 		self.step = 0
-		self.early_stopping = early_stopping
+		self.max_synthesis_steps = max_synthesis_steps
 		self.log_dir = log_dir
 
 		#self.optimization_states = optimization_states
@@ -306,9 +306,9 @@ class Agent():
 		log.append( ' — optimization_policy: {}'.format( self.optimization_policy.__name__ ) )
 		log.append( ' — optimization_policy_kw: {}'.format( self.optimization_policy_kw ) )
 		log.append( ' — Category_data: {} entries'.format( len( self.log_category_data ) ) )
-		log.append( ' — Loss data: {} entries'.format( len( self.fmin ) ) )
+		log.append( ' — Loss data: {} entries'.format( len( self.log_loss_data ) ) )
 		log.append( ' — Evaluated steps: {}'.format( self.step ) )
-		log.append( ' — Early stopping: {}'.format( self.early_stopping ) )
+		log.append( ' — Stopping after: {} synthesis steps'.format( self.max_synthesis_steps ) )
 		log.append( ' — Output log path: {}'.format( self.log_dir ) )
 		log.append( ' — supra_glottal_dimension: {}'.format( self.supra_glottal_dimension ) )
 		log.append( ' — glottal_dimension: {}'.format( self.glottal_dimension ) )
@@ -448,7 +448,7 @@ class Agent():
 				**self.optimization_policy_kw,
 				)
 		except EarlyStoppingException:
-			print( 'Stopped early!' )
+			print( 'Stopped optimization at step: {}'.format( self.step ) )
 		end = time.time()
 		elapsed_time = end - start
 		self._finalize_run( elapsed_time )
@@ -499,7 +499,7 @@ class Agent():
 				visual_losses.append( 0 )
 		return visual_losses
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
-	def calculate_constriction_loss(
+	def calculate_constriction_loss_old(
 		self,
 		supra_glottal_states,
 		):
@@ -512,8 +512,30 @@ class Agent():
 			)
 		return constriction_loss
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
+	def calculate_constriction_loss(
+		self,
+		supra_glottal_states,
+		):
+		constriction_loss = []
+		for state, x in zip( supra_glottal_states, self.optimization_states ):
+			if x.contributes_to_constriction_loss:
+				tube_state = vtl.tract_sequence_to_tube_states( state )[0]
+				if tube_state.constriction != x.constriction:
+					constriction_loss.append( 100 )
+				else:
+					if x.constriction in [ 1, 2 ]:
+						if tube_state.has_precise_constriction():
+							constriction_loss.append( 0 )
+						else:
+							constriction_loss.append( 50 )
+					else:
+						constriction_loss.append( 0 )
+			else:
+				constriction_loss.append( 0 )
+		return np.sum( constriction_loss )
+#---------------------------------------------------------------------------------------------------------------------------------------------------#
 	def objective_function( self, articulatory_states ):
-		if self.step >= self.early_stopping:
+		if self.step >= self.max_synthesis_steps:
 			raise EarlyStoppingException
 
 
@@ -647,7 +669,7 @@ class Agent():
 			#self.fmin.append( [ self.step, ftmp, total_phoneme_loss, visual_loss, effort_loss, phoneme_losses ] )
 			#self.fmin_states.append( [ supra_glottal_sequence, glottal_sequence ] )
 			log = []
-			log.append( 'Step: {: <{}}'.format( self.step, len( str( self.early_stopping ) ) + 1 ) )
+			log.append( 'Step: {: <{}}'.format( self.step, len( str( self.max_synthesis_steps ) ) + 1 ) )
 			#log.append( 'phoneme loss: {: <{}}'.format( f'{total_phoneme_loss:.5f}', 10 ) )
 			if self.n_phoneme_contributions > 1:
 				log.append(
@@ -711,7 +733,10 @@ def demo(
 		optimization_states = []
 		for index, phoneme in enumerate( unit ):
 			if index == 0:
-				supra_glottal_duration = 0.05
+				if len( unit ) == 1:
+					supra_glottal_duration = 0.2
+				else:
+					supra_glottal_duration = 0.05
 				state = 'optimize'
 			else:
 				supra_glottal_duration = 0.15
@@ -740,71 +765,11 @@ def demo(
 							run,
 							),
 						),
-					early_stopping = synthesis_steps,
+					max_synthesis_steps = synthesis_steps,
 					)
 				)
 	for simulation in simulations:
 		simulation.run()
-	return
-#---------------------------------------------------------------------------------------------------------------------------------------------------#
-def demo_print(
-	optimize_units,
-	synthesis_steps = 1000,
-	include_visual_information = False,
-	runs = [ x for x in range( 0, 5 ) ],
-	out_path = 'demo_results/',
-	):
-	optimization = dict(
-		optimization_policy = whale_optimization_algorithm,
-		optimization_policy_kw = dict(
-			hunting_party = 200, # 200 for vowels #300 for cons currently
-			iterations = 500000,
-			spiral_param = 0.5,
-			verbose = False,
-			),
-		name = 'woa',
-		)
-	cce = CategoricalCrossentropy()
-	phoneme_recognition_model = single_phoneme_recognition_model()
-	simulations = []
-	for unit in optimize_units:
-		optimization_states = []
-		for index, phoneme in enumerate( unit ):
-			if index == 0:
-				supra_glottal_duration = 0.05
-				state = 'optimize'
-			else:
-				supra_glottal_duration = 0.15
-				state = 'vtl_preset'
-			optimization_states.append(
-				Optimization_State.from_standard_parameters(
-					phoneme = phoneme,
-					supra_glottal_duration = supra_glottal_duration,
-					include_visual_information = include_visual_information,
-					state = state,
-					)
-				)
-		for run in runs:
-			simulations.append(
-				Agent(
-					optimization_states = optimization_states,
-					phoneme_loss_function = cce,
-					phoneme_recognition_model = phoneme_recognition_model,
-					optimization_policy = optimization[ 'optimization_policy' ],
-					optimization_policy_kw = optimization[ 'optimization_policy_kw' ],
-					log_dir = os.path.join( 
-						out_path, 
-						'{}/{}/{}'.format(
-							optimization[ 'name' ],
-							'_'.join( [ x.phoneme_name for x in optimization_states ] ),
-							run,
-							),
-						),
-					early_stopping = synthesis_steps,
-					)
-				)
-	for simulation in simulations:
-		print( simulation )
 	return
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 if __name__ == '__main__':
@@ -813,5 +778,29 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	#demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ x for x in range( 0, 10 ) ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
-	demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ 15 ], synthesis_steps = 100, out_path = 'demo/CONSONANT_VTL_PRESET_VOWELS/' )
+	demo(
+		optimize_units = [ [ 'a' ], [ 'e' ], [ 'i' ], [ 'o' ], [ 'u' ], [ 'E' ], [ '2' ], [ 'y' ], ],
+		runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
+		synthesis_steps = 1000,
+		out_path = 'results/VOWELS_VISUAL/',
+		include_visual_information = True,
+		)
+	#demo(
+	#	optimize_units = [ [ 'd', 'i' ], ],
+	#	runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
+	#	synthesis_steps = 1000,
+	#	out_path = 'demo_run/CONSONANT_EXTCONSTR_TEST/',
+	#	include_visual_information = False,
+	#	)
 	#demo_print( optimize_units = [ [ 'z', 'i' ], [ 'n', 'i' ] ], runs = [ 0 ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
+	#ag = load( 'demo/CONSONANT_VTL_PRESET_VOWELS/woa/e/15/agent.pkl.gzip')
+	#print(ag)
+	#category_data = load( 'demo/CONSONANT_VTL_PRESET_VOWELS/woa/e/15/log_category_data.pkl.gzip')
+	#print( category_data[ 0 ][ 'supra_glottal_sequence' ] )
+	#stop
+	#array = np.array( [ x[ 'supra_glottal_sequence' ].states.to_numpy() for x in category_data ] ).reshape( (len(category_data), 19 ) )
+	#sgs = vtl.Supra_Glottal_Sequence( array )
+	#sgs.plot_distributions()
+	#avg = vtl.Supra_Glottal_Sequence( np.reshape( np.median( array, axis = 0 ), (1,19) ) )
+	#glt = category_data[0][ 'glottal_sequence' ]
+	#ag.synthesize( avg, glt, 'testboy.wav' )

@@ -43,6 +43,30 @@ import time
 
 from kneed import DataGenerator, KneeLocator
 
+#vowels = [ 'a', 'e', 'i', 'o', 'u', 'E', 'I', 'O', 'U', '2', '9', 'y', 'Y', '@', '6' ]
+#consonants = vtl.single_consonants()
+#consonants.remove( 'T' )
+#consonants.remove( 'D' )
+#consonants.remove( 'r' )
+#classes = [ x for x in chain( vowels, consonants ) ]
+##classes.append( '<empty>' )
+#classes = np.array( classes )
+#print( classes )
+#print( 'Nr of classes: ', classes.shape )
+##---------------------------------------------------------------------------------------------------------------------------------------------------#
+#def sequence_encoder( phoneme_sequence ):
+#	labels = []
+#	for phoneme in phoneme_sequence:
+#		labels.append( np.where( classes == phoneme )[0][0] )
+#	return np.array( labels )
+##---------------------------------------------------------------------------------------------------------------------------------------------------#
+#def sequence_decoder( label_sequence ):
+#	phonemes = []
+#	for label in label_sequence:
+#		phonemes.append( classes[ label ] )
+#	return np.array( phonemes )
+##---------------------------------------------------------------------------------------------------------------------------------------------------#
+
 def forward_model( articulatory_dim = 19, n_classes = 37, compile_model = False ):
 	inputs = keras.Input( shape=( articulatory_dim ) )
 	x = inputs
@@ -113,21 +137,96 @@ category_data = []
 y_pre = []
 #agents = []
 
+category_dic = {}
+category_dic_loss = {}
+
 #from sklearn.preprocessing import OneHotEncoder
 #enc = OneHotEncoder(handle_unknown='ignore')
 #enc.fit( np.array( [ [ 0, 1, 2 ] ] ).T )
+
+#
+#for c_index, consonant in enumerate( [ 'b', 'd', 'g' ] ):
+#	grouped = []
+#	for v_index, vowel in enumerate( [ 'a', 'i', 'u' ] ):
+#		for x in range( 0, 10 ):
+#			log_category_data = vtl.load( 'results/CONSONANTS/woa/{}_{}/{}/log_category_data.pkl.gzip'.format( consonant, vowel, x ) )
+#			grouped.extend( log_category_data )
+#	X = np.array( [ x[ 'supra_glottal_sequence' ].states.iloc[ 0, : ].to_numpy() for x in grouped ] )
+#	p = np.array( [ x[ 'total_phoneme_loss' ] for x in grouped ] )
+#	category_dic[ consonant ] = X
+#	category_dic_loss[ consonant ] = p
+#save( category_dic, 'results/data/results_CONSONANTS_states_X_category_dic.pkl.gzip' )
+#save( category_dic_loss, 'results/data/results_CONSONANTS_loss_p_category_dic.pkl.gzip' )
+#category_dic = load( 'results/data/results_CONSONANTS_states_X_category_dic.pkl.gzip' )
+#category_dic_loss = load( 'results/data/results_CONSONANTS_loss_p_category_dic.pkl.gzip' )
+#for c_index, consonant in enumerate( [ 'b', 'd', 'g' ] ):
+#	df = pd.DataFrame( [ [proba, state] for proba, state in zip( category_dic_loss[ consonant ], category_dic[ consonant] ) ], columns = [ 'y_pred', 'state' ] )
+#	df_sorted = df.sort_values( 'y_pred' )
+#	#print( df_sorted )
+#	from vocal_learning import Agent, Optimization_State
+#	agent = load( 'results/CONSONANTS/woa/b_a/0/agent.pkl.gzip' )
+#	sglt = vtl.get_shapes( [ '@', '@' ] )
+#	glt = vtl.get_shapes( [ 'modal', 'modal' ] )
+#	#print( 'Vowel {}, lowest state: {}'.format( index, list( df_sorted[ 'state' ].iloc[ -1 ] ) ) )
+#	for best in range( 1, 11 ):
+#		sglt.states.iloc[0] = df_sorted[ 'state' ].iloc[ -1*best ]
+#		agent.synthesize( 
+#			sglt,
+#			glt,
+#			'results/audio/CONSONANTS_{}_{}.wav'.format( consonant, best )
+#			)
+#stop
+#category_dic = load( 'results/data/results_CONSONANTS_states_X_category_dic.pkl.gzip' )
+#y=[]
+#x_sub=[]
+#for idx, phoneme in enumerate( [ 'b', 'd', 'g' ] ):
+#	x_sub.append( category_dic[ phoneme ] )
+#	y.extend( [ idx for _ in range( 0, len( category_dic[ phoneme ] ) ) ] )
+#X = np.concatenate( list( category_dic.values() ) )
+#print( X.shape )
+#X_embedded = umap.UMAP( n_neighbors = 100, min_dist = 0.001, init='random', random_state = 12345 ).fit_transform( X )
+#plt.scatter( X_embedded[ :, 0 ], X_embedded[:, 1], c = y )
+#plt.colorbar()
+#plt.show()
+#stop
+
+
+#grouped = []
 
 #for index, phoneme in enumerate( [ 'a', 'e', 'i', 'o', 'u', 'capE', '2', 'y' ] ):
 #	category = np.array( one_hot( [ index ], 8 ) ).reshape( (8) )
 #	print(category)
 #	#ph
+#	grouped_group = []
+#	for g in range( 0, 10 ):
+#		grouped = []
+#		for x in range( 0, 10 ):
+#			#category_data.extend( vtl.load( 'demo_run/CONSONANT_VTL_PRESET_VOWELS/woa/d_i/{}/log_category_data.pkl.gzip'.format( x ) ) )
+#			#log_category_data = vtl.load( 'results/VOWELS/woa/{}/{}/log_category_data.pkl.gzip'.format( phoneme, x ) )
+#			log_category_data = vtl.load( 'results/VOWELS_VISUAL/woa/{}/{}/log_category_data.pkl.gzip'.format( phoneme, g * 10 + x ) )
+#			#for _ in range( 0, len( log_category_data ) ):
+#			#	y_pre.append( category )
+#			#category_data.extend( log_category_data )
+#			grouped.extend( log_category_data )
+#		X = np.array( [ x[ 'supra_glottal_sequence' ].states.iloc[ 0, : ].to_numpy() for x in grouped ] )
+#		#p = np.array( [ x[ 'total_phoneme_loss' ] for x in grouped ] )
+#		grouped_group.append( X )
+#		#grouped_group.append( p )
+#	category_dic[ phoneme ] = grouped_group
+##save( category_dic, 'results/data/results_VOWELS_VISUAL_loss_p_category_dic.pkl.gzip' )
+#save( category_dic, 'results/data/results_VOWELS_VISUAL_states_X_category_dic.pkl.gzip' )
+#stop
+
+#for index, phoneme in enumerate( [ 'a', 'e', 'i', 'o', 'u', 'capE', '2', 'y' ] ):
+#	category = np.array( one_hot( [ index ], 8 ) ).reshape( (8) )
+#	print(category)
 #	for x in range( 0, 100 ):
-#		#category_data.extend( vtl.load( 'demo_run/CONSONANT_VTL_PRESET_VOWELS/woa/d_i/{}/log_category_data.pkl.gzip'.format( x ) ) )
-#		#log_category_data = vtl.load( 'results/VOWELS/woa/{}/{}/log_category_data.pkl.gzip'.format( phoneme, x ) )
 #		log_category_data = vtl.load( 'results/VOWELS_VISUAL/woa/{}/{}/log_category_data.pkl.gzip'.format( phoneme, x ) )
-#		for _ in range( 0, len( log_category_data ) ):
-#			y_pre.append( category )
 #		category_data.extend( log_category_data )
+#loss = np.array( [ x[ 'total_loss' ] for x in category_data ] )
+#save( loss, 'results_VOWELS_VISUAL_total_loss.pkl.gzip' )
+#stop
+
 #y_pred = np.array( [ list( x[ 'phoneme_recognition_states' ].values() )[0] for x in category_data ] )
 #print( y_pred.shape )
 #save( y_pred, 'results_VOWELS_VISUAL_states_y_pred.pkl.gzip' )
@@ -242,6 +341,55 @@ def plot_nn_forward_classifier():
 	#plt.boxplot( df_list )
 	#plt.show()
 
+#from vocal_learning import Agent, Optimization_State
+#agent = load( 'results/VOWELS/woa/u/0/agent.pkl.gzip' )
+#glt = vtl.get_shapes( 'modal' )
+#for preset in  [ 'a', 'e', 'i', 'o', 'u', 'E:', '2', 'y' ]:
+#	sglt = vtl.get_shapes( preset )
+#	if preset == 'E:':
+#		preset = 'capE'
+#	agent.synthesize( 
+#		sglt,
+#		glt,
+#		'results/audio/VOWELS_VTL_PRESET_{}.wav'.format( preset )
+#		)
+
+#stop
+
+
+
+X_data = load( 'results/data/results_VOWELS_VISUAL_states_X.pkl.gzip' )[ : ]
+#y_data = load( 'results/data/results_VOWELS_states_y.pkl.gzip' )[ : ]
+y_pred_data = load( 'results/data/results_VOWELS_VISUAL_states_y_pred.pkl.gzip' )[ : ]
+loss_data = load( 'results/data/results_VOWELS_VISUAL_total_loss.pkl.gzip' )[ : ]
+
+
+
+#for index in range( 0, 15 ):
+for index in [ 0, 1, 2, 3, 4, 5, 9, 11 ]:
+	#prob = [ x[ index ] for x in y_pred_data ]
+	#print( np.array(prob).shape )
+	df = pd.DataFrame( [ [proba, y_pred, state] for proba, y_pred, state in zip( loss_data, y_pred_data, X_data ) ], columns = [ 'loss', 'y_pred', 'state' ] )
+	df[ 'y_pos' ] = [ np.argmax( x ) for x in df['y_pred'] ]
+	df = df.loc[ df[ 'y_pos' ] == index ]
+	df_sorted = df.sort_values( 'loss' )
+	#print( df_sorted )
+	from vocal_learning import Agent, Optimization_State
+	agent = load( 'results/VOWELS/woa/u/0/agent.pkl.gzip' )
+	glt = vtl.get_shapes( 'modal' )
+	print( 'Vowel {}, lowest state: {}'.format( index, list( df_sorted[ 'state' ].iloc[ 0 ] ) ) )
+	#for best in range( 0, 10 ):
+	#	agent.synthesize( 
+	#		vtl.Supra_Glottal_Sequence( df_sorted[ 'state' ].iloc[ best ].reshape( 1, 19 ) ),
+	#		#vtl.Supra_Glottal_Sequence( df_sorted[ 'state' ].iloc[ -1*best ].reshape( 1, 19 ) ),
+	#		glt,
+	#		'results/audio/VISUAL_total_loss/VOWELS_VISUAL_{}_{}.wav'.format( index, best+1 )
+	#		)
+
+
+stop
+
+
 
 #plot_nn_forward_classifier()
 #stop
@@ -251,16 +399,91 @@ agent = load( 'results/VOWELS_VISUAL/woa/u/0/agent.pkl.gzip' )
 glt = vtl.get_shapes( 'modal' )
 
 
-X_data = load( 'results_VOWELS_states_X.pkl.gzip' )[ : ]
-y_data = load( 'results_VOWELS_states_y.pkl.gzip' )[ : ]
+category_dic = load( 'results/data/results_VOWELS_VISUAL_states_X_category_dic.pkl.gzip' )
+category_dic_loss = load( 'results/data/results_VOWELS_VISUAL_loss_p_category_dic.pkl.gzip' )
+
+
+for index, phoneme in enumerate( [ 'u', 'a', 'e', 'i', 'o', 'u', 'capE', '2', 'y' ] ):
+	error_selection = []
+	event_selection = []
+	#for run in range( 0, 5 ):
+	#	#X = np.concatenate( category_dic[ phoneme ][:2] )
+	#	X = category_dic[ phoneme ][ run ]#[ :, [ 1, 3, 4, 5, 8, 9 ] ]
+	#	sgs = vtl.Supra_Glottal_Sequence( X )
+	#	sgs.plot_distributions()
+	#stop
+	errors = []
+	select_classes = []
+	for run in range( 0, 5 ):
+		X = category_dic[ phoneme ][ run ]#[ :, [ 1, 3, 4, 5, 8, 9 ] ]
+		p = category_dic_loss[ phoneme ][ run ]
+		#plt.hist(p, bins = 50 )
+		#plt.show()
+		#stop
+		print( X.shape )
+		X_embedded = umap.UMAP( n_neighbors = 100, min_dist = 0.001, init='random', random_state = 12345 ).fit_transform( X ) # articulatory vector embedding model
+		clustering = DBSCAN( eps=1, min_samples=10 ).fit( X_embedded )
+		#clustering = OPTICS(min_samples=50, metric='euclidean' ).fit(X_embedded)
+		labels = clustering.labels_
+		print( labels )
+		#errors = []
+		#select_classes = []
+		for lbl_idx, cls_lbl in enumerate( set(labels) ):
+			select_class = [ cls_idx for cls_idx,  label in enumerate( labels ) if label == cls_lbl ]
+			errors.append( [ lbl_idx, run, np.median( p[ select_class ] ), select_class ] )
+			#plt.hist( p[ select_class ], bins = 50, histtype = 'step' )
+			#sgs = vtl.Supra_Glottal_Sequence( X[ select_class ] )
+			#sgs.plot_distributions()
+			select_classes.append( [ lbl_idx, run, select_class] )
+		#error_selection.append( errors )
+		#event_selection.append( select_classes )
+	errors = pd.DataFrame( np.array( errors ), columns = [ 'lbl_idx', 'run', 'loss', 'select_class' ] )
+	print( errors )
+	print( errors.sort_values( 'loss' ) )
+	errors = errors.sort_values( 'loss' )
+	event_selection = errors[ 'select_class' ]
+	run_selection = errors[ 'run' ]
+	for best in range( 0, 10 ):
+		#arr = np.median( X[ event_selection.iloc[ best ] ], axis = 0 )
+		#print( arr.shape )
+		agent.synthesize( 
+			vtl.Supra_Glottal_Sequence( np.median( category_dic[ phoneme ][ run_selection.iloc[ best ] ][ event_selection.iloc[ best ] ], axis = 0 ).reshape( 1, 19 ) ),
+			glt,
+			'test_low_error_{}.wav'.format( best )
+			)
+	top
+	error_selection = np.array( error_selection )
+	print( error_selection )
+	print( np.unravel_index(np.argsort(error_selection, axis=None), error_selection.shape) )
+	stop
+		#plt.show()
+		#position = np.argmin( errors )
+		#sgs = vtl.Supra_Glottal_Sequence( X[ select_classes[ position ] ] )
+		#sgs.plot_distributions()
+		#stop
+		#plt.scatter( X_embedded[ :, 0 ], X_embedded[:, 1], c = p )
+		#plt.colorbar()
+		#plt.show()
+		#stop
+stop
+stop
+
+
+
+
+
+
+
+X_data = load( 'results/data/results_VOWELS_states_X.pkl.gzip' )[ : ]
+y_data = load( 'results/data/results_VOWELS_states_y.pkl.gzip' )[ : ]
 
 
 
 #train_nn_forward_classifier( X_data, y_data, 'forward_cross_validation' )
 #stop
 
-X_data_vis = load( 'results_VOWELS_VISUAL_states_X.pkl.gzip' )[ : ]
-y_data_vis = load( 'results_VOWELS_VISUAL_states_y.pkl.gzip' )[ : ]
+X_data_vis = load( 'results/data/results_VOWELS_VISUAL_states_X.pkl.gzip' )[ : ]
+y_data_vis = load( 'results/data/results_VOWELS_VISUAL_states_y.pkl.gzip' )[ : ]
 
 #train_nn_forward_classifier( X_data_vis, y_data_vis, 'VISUAL_forward_cross_validation' )
 #stop
@@ -314,18 +537,20 @@ vtl_presets = [ 'a', 'e', 'i', 'o', 'u', 'E', '2', 'y' ]
 preset_distances = []
 preset_distances_vis = []
 for index in range( 0, 8 ):
-	n_sample = 25000
-	select_from_category = random.sample( indices[index], n_sample )
-	select.extend( select_from_category )
-	select_labels.extend( [ index for _ in range( 0, n_sample ) ] )
+	###n_sample = 25000
+	####select_from_category = random.sample( indices[index], n_sample )
+	###select_from_category = indices[index]#[ : n_sample ]
+	###select.extend( select_from_category )
+	###select_labels.extend( [ index for _ in range( 0, len( select_from_category ) ) ] )
+	####select_from_category_vis = random.sample( indices_vis[index], n_sample )
+	###select_from_category_vis = indices_vis[index]#[ : n_sample ]
+	###select_vis.extend( select_from_category_vis )
+	###select_labels_vis.extend( [ index for _ in range( 0, len( select_from_category_vis ) ) ] )
+	####avem = load( 'avem_category_{}_umap_nn_100.pkl.gzip'.format( index ) )
+	####avem_dim_4 = load( 'avem_dim_4_category_{}_umap_nn_100.pkl.gzip'.format( index ) )
+	###X = X_data[ select_from_category ]
+	###X_vis = X_data_vis[ select_from_category_vis ]
 
-	select_from_category_vis = random.sample( indices_vis[index], n_sample )
-	select_vis.extend( select_from_category_vis )
-	select_labels_vis.extend( [ index for _ in range( 0, n_sample ) ] )
-	#avem = load( 'avem_category_{}_umap_nn_100.pkl.gzip'.format( index ) )
-	#avem_dim_4 = load( 'avem_dim_4_category_{}_umap_nn_100.pkl.gzip'.format( index ) )
-	X = X_data[ select_from_category ]
-	X_vis = X_data_vis[ select_from_category_vis ]
 	#sgs_visual = vtl.Supra_Glottal_Sequence( X )
 	#sgs_visual.plot_distributions( out_file_path = 'results/VOWELS_category_{}_art_dist_25k.pdf'.format( index ) )
 	#stop
@@ -338,11 +563,11 @@ for index in range( 0, 8 ):
 	#X_embedded = avem_dim_4.transform( X )
 	#axs[1][ index ].scatter( X_embedded[ :, 0 ], X_embedded[:, 1] )
 
-	##X_embedded = umap.UMAP( n_neighbors = 50, min_dist = 0.001, init='random', random_state = 12345 ).fit_transform( X ) # articulatory vector embedding model
-	##plt.scatter( X_embedded[ :, 0 ], X_embedded[:, 1] )#c = labels )
-	##plt.colorbar()
-	##plt.show()
-	##stop
+	X_embedded = umap.UMAP( n_neighbors = 1000, min_dist = 0.001, init='random', random_state = 12345 ).fit_transform( X ) # articulatory vector embedding model
+	plt.scatter( X_embedded[ :, 0 ], X_embedded[:, 1] )#c = labels )
+	plt.colorbar()
+	plt.show()
+	stop
 	vtl_state = vtl.get_shapes( vtl_presets[ index ] ).states.to_numpy()
 	preset_distances.append(
 		[ [ np.abs(

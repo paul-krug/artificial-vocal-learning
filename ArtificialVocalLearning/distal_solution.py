@@ -257,12 +257,19 @@ def dummy_loss(y_true, y_pred):
     return 0.
 
 if __name__ == '__main__':
-	X = load( 'results/data/results_VOWELS_states_X.pkl.gzip' )
+	#X = load( 'results/data/results_VOWELS_states_X.pkl.gzip' )
 	#y = load( 'results_VOWELS_states_y.pkl.gzip' )
-	y_pred = load( 'results/data/results_VOWELS_states_y_pred.pkl.gzip' )
+	#y_pred = load( 'results/data/results_VOWELS_states_y_pred.pkl.gzip' )
+	#X = load( 'results/data/results_data_states_X.pkl.gzip' )
+	#y_pred = load( 'results/data/results_data_states_y.pkl.gzip' )
+	#X = load( 'results/data/results_data_VISUAL_states_X.pkl.gzip' )
+	#y_pred = load( 'results/data/results_data_VISUAL_states_y.pkl.gzip' )
+
+	X = np.concatenate( [ load( 'results/data/results_data_states_X.pkl.gzip' ), load( 'results/data/results_data_VISUAL_states_X.pkl.gzip' ) ] )
+	y_pred = np.concatenate( [ load( 'results/data/results_data_states_y.pkl.gzip' ), load( 'results/data/results_data_VISUAL_states_y.pkl.gzip' ) ] )
 	print( X.shape )
 	print( y_pred.shape )
-	X_train, X_test, y_train, y_test = train_test_split( X, y_pred, train_size = 0.9, random_state=42, shuffle = True )
+	X_train, X_test, y_train, y_test = train_test_split( X, y_pred, train_size = 0.9, random_state=42, shuffle = True, stratify = [ np.argmax( y ) for y in y_pred ] )
 	X_train = np.reshape( X_train, ( X_train.shape[0], 1, X_train.shape[1] ) )
 	y_train = np.reshape( y_train, ( y_train.shape[0], 1, y_train.shape[1] ) )
 	print( y_train.shape )
@@ -273,12 +280,12 @@ if __name__ == '__main__':
 	#stop
 	ivm = inverse_model( compile_model = True )
 	fwm = forward_model( compile_model = True )
-	ivm.fit( y_train[ : 200000 ], X_train[ : 200000 ], validation_split = 0.1,  batch_size = 128, epochs = 10 )
-	#ivm.fit( y_train, X_train, validation_split = 0.1,  batch_size = 128, epochs = 10 )
+	#ivm.fit( y_train[ : 200000 ], X_train[ : 200000 ], validation_split = 0.1,  batch_size = 128, epochs = 10 )
+	ivm.fit( y_train, X_train, validation_split = 0.1,  batch_size = 128, epochs = 100 )
 
 
-	ivm.save( 'IVM_VOWELS.h5' )
-
+	ivm.save( 'IVM_FULL_100_epochs_COMB.h5' )
+	stop
 
 	#for index, phoneme in enumerate( [ 'a', 'e', 'i', 'o', 'u', 'capE', '2', 'y' ] ):
 	#	category = np.array( one_hot( [ index ], 37 ) ).reshape( (1,1,37) )
@@ -286,7 +293,7 @@ if __name__ == '__main__':
 	#	category[0,0,index] = 0.9
 	#	agent.synthesize( vtl.Supra_Glottal_Sequence( ivm.predict( category )[0] ), glt, 'results/VOWELS/distal_ivm_fwm/ivm_test_{}.wav'.format( phoneme ) )
 
-	fwm.fit( X_train, y_train, validation_split = 0.1, batch_size = 128, epochs = 10 )
+	#fwm.fit( X_train, y_train, validation_split = 0.1, batch_size = 128, epochs = 100 )
 	#ivm = inverse_model_regularized( fwm, compile_model = True )
 	#ivm.fit( y_train, fb_y, validation_split = 0.1,  batch_size = 128, epochs = 20 )
 	#ivm.save( 'IVM_REG_VOWELS.h5' )
@@ -300,7 +307,9 @@ if __name__ == '__main__':
 	#	agent.synthesize( vtl.Supra_Glottal_Sequence( ivm.predict( category )[0][ :, : 19 ] ), glt, 'results/VOWELS/distal_results/transfer_ivm_reg_run_1_{}.wav'.format( index ) )
 	#stop
 
-	fwm.save( 'FWM_VOWELS.h5' )
+	#fwm.save( 'FWM_FULL.h5' )
+
+	#stop
 
 	#model = forward_backward_forward_model( fwm, ivm )
 	#model.fit( X_train[ : 100000 ], y_train[ : 100000 ], validation_split = 0.1, batch_size = 128, epochs = 50 )
@@ -312,14 +321,19 @@ if __name__ == '__main__':
 	#fb_y = np.array( X_train[ 200000 : 300000 ], y_train[ 200000 : 300000 ] )
 	#print( fb_y.shape )
 
+	ivm = keras.models.load_model( 'IVM_FULL.h5' )
+	fwm = keras.models.load_model( 'FWM_FULL.h5' )
+
 	model = forward_backward_model( fwm, ivm )
 	#model.fit( X_train[ 200000 : 400000 ], fb_y, validation_split = 0.1, batch_size = 128, epochs = 50 )
-	model.fit( X_train, fb_y, validation_split = 0.1, batch_size = 128, epochs = 100 )
+	model.fit( X_train, fb_y, validation_split = 0.1, batch_size = 128, epochs = 10 )
 	#model.fit( X_train[ : 200000 ], fb_y, validation_split = 0.1, batch_size = 128, epochs = 50 )
 	#stop
 
-	ivm.save( 'YM_IVM_CONCAT_VOWELS.h5' )
-	fwm.save( 'YM_FWM_CONCAT_VOWELS.h5' )
+	ivm.save( 'YM_IVM_CONCAT_FULL.h5' )
+	fwm.save( 'YM_FWM_CONCAT_FULL.h5' )
+
+	stop
 
 	#model = backward_forward_model( ivm, fwm )
 	#model.fit( y_train[ 100000 : 200000 ], y_train[ 100000 : 200000 ],  validation_split = 0.1, batch_size = 128, epochs = 50 )

@@ -801,7 +801,7 @@ def demo(
 				state = 'optimize'
 			else:
 				supra_glottal_duration = 0.15
-				supra_glottal_duration = 0.15 # for voiceless sounds because of voice onset time
+				#supra_glottal_duration = 0.225 # for voiceless sounds because of voice onset time
 				#state = 'vtl_preset'
 				state = trailing_states
 			optimization_states.append(
@@ -842,7 +842,7 @@ if __name__ == '__main__':
 
 	#demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ x for x in range( 0, 10 ) ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
 	demo(
-		optimize_units = [ [ 'R', 'a' ], [ 'j', 'a' ], [ 'C', 'a' ], [ 'x', 'a' ] ],
+		optimize_units = [ [ 'b', 'a' ], ],
 		runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
 		synthesis_steps = 1000,
 		out_path = 'results/CONSONANTS_VISUAL_A/',

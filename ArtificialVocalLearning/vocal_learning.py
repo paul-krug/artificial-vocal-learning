@@ -1,32 +1,26 @@
 
 
 
-import base64
+
 import VocalTractLab as vtl
-import pandas as pd
+#import pandas as pd
 import numpy as np
 import os
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+print( 'Turning CUDA off, because inference speed with this vocal learning framework is usually lower on CPU.' )
+os.environ[ 'TF_CPP_MIN_LOG_LEVEL' ] = '2'
 os.environ[ 'CUDA_VISIBLE_DEVICES' ] = '-1'
 import tensorflow as tf
-#tf.get_logger().setLevel('ERROR')
-#from tensorflow.keras import backend as K
 from tensorflow.keras.losses import CategoricalCrossentropy
-#from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.backend import one_hot
-import matplotlib.pyplot as plt
-import requests
 
 from sklearn.metrics import mean_squared_error
 
 from phoneme_recognition import preprocess
 from phoneme_classes import sequence_encoder, sequence_decoder
 from phoneme_recognition import single_phoneme_recognition_model
-#rom agents import Perceptual_Learner_VT_Space
 from visual_measurements import get_visual_data
 from learned_states import get_learned_state
 
-#from tools_mp import multiprocess
 from pyMetaheuristic.algorithm import sine_cosine_algorithm
 from pyMetaheuristic.algorithm import simulated_annealing
 from pyMetaheuristic.algorithm import random_search
@@ -44,7 +38,6 @@ from pyMetaheuristic.algorithm import firefly_algorithm
 from pyMetaheuristic.algorithm import flow_direction_algorithm
 from pyMetaheuristic.algorithm import improved_whale_optimization_algorithm
 
-import json
 import time
 
 import argparse
@@ -52,12 +45,6 @@ from copy import deepcopy
 from itertools import chain
 
 from tools_io import save, load
-
-
-#from phoneme_recognition import phoneme_recognition_model
-
-#os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-#os.environ[ 'CUDA_VISIBLE_DEVICES' ] = '-1'
 
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
@@ -81,11 +68,9 @@ class Optimization_State():
 		glottal_time_constant,
 		supra_glottal_duration,
 		glottal_offset,
-		#acoustic_duration,
 		contributes_to_constriction_loss,
 		contributes_to_phoneme_loss,
 		contributes_to_visual_loss,
-		#include_visual_information,
 		):
 		self.phoneme_identity = phoneme_identity
 		self.phoneme_name = phoneme_name
@@ -93,11 +78,7 @@ class Optimization_State():
 		self.constriction = constriction
 		self.optimize_glottis = optimize_glottis
 		self.optimize_glottal_parameters = []
-		#if self.optimize_glottis:
-		#	self.optimize_glottal_parameters = [ 'XB', 'RA' ]
 		self.optimize_supra_glottal_parameters = optimize_supra_glottal_parameters
-		#print( 'sgbs: ', supra_glottal_base_state )
-		#print( isinstance( supra_glottal_base_state, str ) )
 		if isinstance( supra_glottal_base_state, str ):
 			self.supra_glottal_base_state = vtl.get_shape( supra_glottal_base_state )
 		else:
@@ -110,11 +91,9 @@ class Optimization_State():
 		self.glottal_time_constant = glottal_time_constant
 		self.supra_glottal_duration = supra_glottal_duration
 		self.glottal_offset = glottal_offset
-		#self.acoustic_duration = acoustic_duration
 		self.contributes_to_constriction_loss = contributes_to_constriction_loss
 		self.contributes_to_phoneme_loss = contributes_to_phoneme_loss
 		self.contributes_to_visual_loss = contributes_to_visual_loss
-		#self.include_visual_information = include_visual_information
 		return
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 	@classmethod
@@ -145,8 +124,7 @@ class Optimization_State():
 			optimize_glottis = False
 			constriction = 2
 		if phoneme in [ 'f', 's', 'S', 'C', 'x', ]:
-			#glottal_offset = -0.02 # -10ms glottal target shift for voiceless fricatives
-			glottal_offset = -0.03 # -10ms glottal target shift for voiceless fricatives -0.03
+			glottal_offset = -0.03 # -30ms glottal target shift for voiceless fricatives
 		if phoneme in [ 'p', 't', ]:
 			glottal_offset = 0.05 # +50ms glottal target shift for voiceless plosives p, t
 		if phoneme in [ 'k', ]:
@@ -184,9 +162,7 @@ class Optimization_State():
 			phoneme_name = 'cap{}'.format( phoneme )
 		else:
 			phoneme_name = phoneme
-		#supra_glottal_base_state = '@'
 		glottal_base_state = 'modal'
-		#acoustic_duration = 0.15
 		supra_glottal_time_constant = 0.012
 		glottal_time_constant = 0.012
 		contributes_to_phoneme_loss = True,
@@ -202,27 +178,10 @@ class Optimization_State():
 			glottal_time_constant = glottal_time_constant,
 			supra_glottal_duration = supra_glottal_duration,
 			glottal_offset = glottal_offset,
-			#acoustic_duration = acoustic_duration,
 			contributes_to_constriction_loss = contributes_to_constriction_loss,
 			contributes_to_phoneme_loss = contributes_to_phoneme_loss,
 			contributes_to_visual_loss = include_visual_information,
 			)
-		#dict(
-		#	optimize_glottis = optimize_glottis,
-		#	constriction = constriction,
-		#	optimize_supra_glottal_parameters = optimize_supra_glottal_parameters,
-		#	phoneme_name = phoneme_name,
-		#	supra_glottal_duration = supra_glottal_duration,
-		#	glottal_duration = glottal_duration,
-		#	supra_glottal_base_state = '@',
-		#	glottal_base_state = 'modal',
-		#	)
-#---------------------------------------------------------------------------------------------------------------------------------------------------#
-	def select_optimized_preset( self, phoneme, ):
-		vowels = {
-
-		}
-		return state
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -239,12 +198,8 @@ class Agent():
 		max_synthesis_steps,
 		):
 		self.optimization_states = optimization_states
-
-
 		self.phoneme_loss_function = phoneme_loss_function
 		self.phoneme_recognition_model = phoneme_recognition_model
-		#phoneme_model_save_dir = 'models/RUN_2_tr_KIEL_BITS_te_VTL'
-		#self.phoneme_recognition_model = single_phoneme_recognition_model( phoneme_model_save_dir )
 		self.optimization_policy = optimization_policy
 		self.optimization_policy_kw = deepcopy( optimization_policy_kw )
 		self.log_category_data = []
@@ -262,14 +217,9 @@ class Agent():
 				glottal_sequence = None,
 				)
 			]
-		#self.fmin = [ [ -1, np.inf ] ]
-		#self.fmin_states = []
 		self.step = 0
 		self.max_synthesis_steps = max_synthesis_steps
 		self.log_dir = log_dir
-
-		#self.optimization_states = optimization_states
-		#print( self.optimization_states )
 
 		if not os.path.exists( self.log_dir ):
 			os.makedirs( self.log_dir )
@@ -277,29 +227,12 @@ class Agent():
 		self.n_phoneme_contributions = len( [ x for x in self.optimization_states if x.contributes_to_phoneme_loss ] )
 		self.n_visual_contributions = len( [ x for x in self.optimization_states if x.contributes_to_visual_loss ] )
 
-
 		self.supra_glottal_optimization_parameters = [ y for x in list( self.optimization_states ) for y in x.optimize_supra_glottal_parameters ]
 		self.glottal_optimization_parameters = [ y for x in list( self.optimization_states ) for y in x.optimize_glottal_parameters ]
 		self.optimization_parameters = [ y for x in list( self.optimization_states ) for y in chain( x.optimize_supra_glottal_parameters, x.optimize_glottal_parameters ) ]
 
-		min_state, max_state = self.get_valid_search_space_range()# self.optimization_states )
+		min_state, max_state = self.get_valid_search_space_range()
 
-		#supra_glottal_parameter_info = vtl.get_param_info( 'tract' )
-		#supra_glottal_parameter_info.loc[ 'LD', 'min' ] = -0.5
-		#supra_glottal_parameter_info.loc[ 'LD', 'max' ] = 2.0
-
-		#self.min_state = supra_glottal_parameter_info.loc[ optimize_supra_glottal_parameters, 'min' ].to_numpy( dtype = float )
-		#self.max_state = supra_glottal_parameter_info.loc[ optimize_supra_glottal_parameters, 'max' ].to_numpy( dtype = float )
-		#print(self.min_state)
-		#print(self.max_state)
-		#stop
-		#if len( optimize_glottal_parameters ) != 0:
-		#	min_glottal_states = vtl.get_param_info( 'glottis' ).loc[ optimize_glottal_parameters, 'min' ].to_numpy( dtype = float )
-		#	max_glottal_states = vtl.get_param_info( 'glottis' ).loc[ optimize_glottal_parameters, 'max' ].to_numpy( dtype = float )
-		#	self.min_state = np.concatenate( [ self.min_state, min_glottal_states ] )
-		#	self.max_state = np.concatenate( [ self.max_state, max_glottal_states ] )
-		#	#print( self.min_state.shape )
-		#st
 		self.supra_glottal_dimension = ( len( self.optimization_states ), vtl.get_constants()[ 'n_tract_params' ] )
 		self.glottal_dimension = ( len( self.optimization_states ), vtl.get_constants()[ 'n_glottis_params' ] )
 
@@ -312,7 +245,6 @@ class Agent():
 					]
 				)
 
-		#print( 'goal state shape: ', self.goal_states.shape )
 		self.optimization_policy_kw[ 'min_values' ] = min_state
 		self.optimization_policy_kw[ 'max_values' ] = max_state
 		return
@@ -360,13 +292,10 @@ class Agent():
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 	def get_valid_search_space_range(
 		self,
-		#optimization_states,
 		):
 		supra_glottal_parameter_info = vtl.get_param_info( 'tract' )
 		supra_glottal_parameter_info.loc[ 'LD', 'min' ] = -0.5
 		supra_glottal_parameter_info.loc[ 'LD', 'max' ] = 2.0
-
-		#optimize_supra_glottal_parameters = [ y for x in list( optimization_states ) for y in x.optimize_supra_glottal_parameters ]
 
 		supra_glottal_min_state = supra_glottal_parameter_info.loc[ self.supra_glottal_optimization_parameters, 'min' ].to_numpy( dtype = float )
 		supra_glottal_max_state = supra_glottal_parameter_info.loc[ self.supra_glottal_optimization_parameters, 'max' ].to_numpy( dtype = float )
@@ -389,7 +318,7 @@ class Agent():
 			time_constants = [ [ x.supra_glottal_time_constant for x in self.optimization_states ] ],
 		)
 		glottal_durations = []
-		for index, x in enumerate( self.optimization_states ): # TODO: leads potentially to non equal glottal and subglottal dur. to to shift at end if last offset != 0
+		for index, x in enumerate( self.optimization_states ): # TODO: leads potentially to non equal glottal and subglottal dur. due to shift at end if last offset != 0
 			glottal_durations.append(
 				np.sum( [ y.supra_glottal_duration for y in self.optimization_states[ : index + 1 ] ] )
 				+ x.glottal_offset
@@ -459,8 +388,6 @@ class Agent():
 		save( elapsed_time, os.path.join( self.log_dir, 'computation_time.pkl.gzip' ) )
 		save( self.log_category_data, os.path.join( self.log_dir, 'log_category_data.pkl.gzip' ) )
 		save( self.log_loss_data, os.path.join( self.log_dir, 'log_loss_data.pkl.gzip' ) )
-		#save( self.fmin, os.path.join( self.log_dir, 'fmin.pkl.gzip' ) )
-		#save( self.fmin_states, os.path.join( self.log_dir, 'fmin_states.pkl.gzip' ) )
 		self.to_file( os.path.join( self.log_dir, 'agent.pkl.gzip' ) )
 		print( '\nSimulation finished.' )
 		return
@@ -469,7 +396,7 @@ class Agent():
 		self._initialize_run()
 		start = time.time()
 		try:
-			result = self.optimization_policy( # TODO result = kann weg
+			self.optimization_policy(
 				target_function = self.objective_function,
 				**self.optimization_policy_kw,
 				)
@@ -483,10 +410,8 @@ class Agent():
 	def calculate_phoneme_losses(
 		self,
 		audio_in,
-		#phoneme_goal_state,
 		):
 		audio_segments = [ audio_in[ int( seg_min * 16000 ) : int( seg_max * 16000 ) ] for seg_min, seg_max in self.phoneme_segments ]
-		#main_losses = np.array( [ self.calculate_phoneme_loss( audio_in, x.phoneme_state ) for audio_in, x in zip( audio_segments, self.optimization_states ) ] )
 		phoneme_losses = []
 		category_losses = []
 		phoneme_recognition_states = []
@@ -500,7 +425,6 @@ class Agent():
 			y_true_category = np.argmax( y_true )
 			#print( 'y_true: ', y_true )
 			#print( 'y_pred_category: ', y_pred_category )
-			#stop
 			if y_pred_category == y_true_category:
 				category_losses.append( 0 )
 			else:
@@ -564,7 +488,6 @@ class Agent():
 		if self.step >= self.max_synthesis_steps:
 			raise EarlyStoppingException
 
-
 		supra_glottal_states = [ x.supra_glottal_base_state for x in self.optimization_states ]
 		#print( 'sgs: \n', supra_glottal_states )
 		#print( len( articulatory_states ) )
@@ -576,66 +499,21 @@ class Agent():
 			for param_index, parameter in enumerate( parameters ):
 				supra_glottal_states[ state_index ].states.loc[ 0, parameter ] = parameters_queries[ param_index ]
 			prev_index = prev_index + len( parameters )
-		#print( np.array( [ x.states.to_numpy() for x in supra_glottal_states ] ) )
-
 
 		constriction_loss = self.calculate_constriction_loss( supra_glottal_states )
 		if constriction_loss != 0:
 			return constriction_loss
 		visual_losses = self.calculate_visual_losses( supra_glottal_states )
 
-
-
 		supra_glottal_sequence = vtl.Supra_Glottal_Sequence(
 			np.array( [ x.states.to_numpy() for x in supra_glottal_states ] ).reshape( self.supra_glottal_dimension )
 			)
-		#print(supra_glottal_sequence)
 
-
-		#tube_states = vtl.tract_sequence_to_tube_states( supra_glottal_sequence )
-		#if tube_states[0].constriction != self.constraints[0][ 'constriction' ]:
-		#	return 100
-
-		#if self.include_visual_information:
-		#	opt_visual_data = [
-		#		supra_glottal_states.states.loc[ 0, 'JA' ],
-		#		supra_glottal_states.states.loc[ 0, 'LP' ],
-		#		supra_glottal_states.states.loc[ 0, 'LD' ],
-		#	]
-		#	measured_visual_data = get_visual_data( self.phoneme )
-		#	visual_loss = mean_squared_error( opt_visual_data, measured_visual_data )
-		#	if visual_loss >= 10:
-		#		return visual_loss
-		#else:
-		#	visual_loss = 0
-		#effort_loss = 0
-
-
-		#if isinstance( self.succeeding_state, vtl.Supra_Glottal_Sequence ):
-		#	#print(supra_glottal_states.states)
-		#	#print(self.succeeding_state.states)
-		#	#print( supra_glottal_states.states.iloc[ 0, : ].to_numpy() )
-		#	#print( self.succeeding_state.states.iloc[ 0, : ].to_numpy() )
-		#	effort_loss = mean_squared_error( supra_glottal_states.states.iloc[ 0, : ].to_numpy(), self.succeeding_state.states.iloc[ 0, : ].to_numpy() )
-		#	if effort_loss >= 1:
-		#		return effort_loss + 10
-		#else:
-		#	effort_loss = 0
-		#print( supra_glottal_states )
-		#stop
-
-		
-
-		#glottal_parameters = articulatory_states[ len( self.optimize_supra_glottal_parameters ) : ]
 		glottal_states = [ x.glottal_base_state for x in self.optimization_states ]
-		#prev_index = 0
+
 		for state_index, x in enumerate( self.optimization_states ):
 			if x.optimize_glottis:
 				if x.phoneme_identity == 'R':
-					#glottal_states[ state_index ].states.loc[ 0, 'XB' ] = 0.05
-					#glottal_states[ state_index ].states.loc[ 0, 'XT' ] = 0.05
-					#glottal_states[ state_index ].states.loc[ 0, 'CA' ] = 0.05
-					#glottal_states[ state_index ].states.loc[ 0, 'RA' ] = 1.0
 					XB = 0.05
 					RA = 1.0
 				else:
@@ -645,50 +523,15 @@ class Agent():
 				glottal_states[ state_index ].states.loc[ 0, 'XT' ] = XB
 				glottal_states[ state_index ].states.loc[ 0, 'CA' ] = XB
 				glottal_states[ state_index ].states.loc[ 0, 'RA' ] = RA
-				#print( 'prev_index: ', prev_index )
-				#parameters = [ 'XB', 'RA' ]
-				#parameters = x.optimize_glottal_parameters
-				#XB, RA = articulatory_states[
-				#	len( self.supra_glottal_optimization_parameters ) + prev_index :
-				#	len( self.supra_glottal_optimization_parameters ) + prev_index + len( parameters )
-				#	]
-				##for param_index, parameter in enumerate( parameters ):
-				#glottal_states[ state_index ].states.loc[ 0, 'XB' ] = 0.1 #XB
-				#glottal_states[ state_index ].states.loc[ 0, 'XT' ] = 0.1 #XB
-				#glottal_states[ state_index ].states.loc[ 0, 'CA' ] = 0.1 #XB
-				#if RA <= 0:
-				#	glottal_states[ state_index ].states.loc[ 0, 'RA' ] = 0.0
-				#else:
-				#	glottal_states[ state_index ].states.loc[ 0, 'RA' ] = 1.0
-				#glottal_states[ state_index ].states.loc[ 0, 'RA' ] = 0.0
-				#prev_index = prev_index + len( parameters )
-		#if len( self.optimize_glottal_parameters ) != 0:
-		#	glottal_states.states[ 'XB' ] = glottal_parameters[ self.optimize_glottal_parameters.index( 'XB' ) ]
-		#	glottal_states.states[ 'XT' ] = glottal_parameters[ self.optimize_glottal_parameters.index( 'XB' ) ]
-		#	glottal_states.states[ 'CA' ] = glottal_parameters[ self.optimize_glottal_parameters.index( 'XB' ) ]
-		#	if glottal_parameters[ self.optimize_glottal_parameters.index( 'RA' ) ] <= 0:
-		#		glottal_states.states[ 'RA' ] = 0.0
-		#	else:
-		#		glottal_states.states[ 'RA' ] = 1.0
+
 		glottal_sequence = vtl.Sub_Glottal_Sequence(
 			np.array( [ x.states.to_numpy() for x in glottal_states ] ).reshape( self.glottal_dimension )
 			)
-		#print(glottal_sequence)
-
 		
 		motor_score_list = self.get_motor_score( supra_glottal_sequence, glottal_sequence )
 		audio_signal = vtl.tract_sequence_to_audio( motor_score_list, save_file = False, return_data = True, sr = 16000 )[0]
-		#plt.plot( query[0] )
-		#plt.show()
-		#stop
-		#audio_in = query[0][ int( 0.0 * 16000 ) : int( 0.15 * 16000 ) ] # 0.0, 0.15 for vowels, cons: 0.075, 0.225
 
 		phoneme_losses, category_losses, phoneme_recognition_states = self.calculate_phoneme_losses( audio_signal )
-
-		#audio_segments = [ query[0][ int( seg_min * 16000 ) : int( seg_max * 16000 ) ] for seg_min, seg_max in self.phoneme_segments ]
-		#main_losses = np.array( [ self.calculate_phoneme_loss( audio_in, x.phoneme_state ) for audio_in, x in zip( audio_segments, self.optimization_states ) ] )
-		#phoneme_losses = main_losses[ :, 0 ]
-		#category_losses = main_losses[ :, 1 ]
 
 		total_phoneme_loss = np.sum( phoneme_losses )
 		total_visual_loss = np.sum( visual_losses )
@@ -726,11 +569,8 @@ class Agent():
 					glottal_sequence = glottal_sequence,
 					)
 				)
-			#self.fmin.append( [ self.step, ftmp, total_phoneme_loss, visual_loss, effort_loss, phoneme_losses ] )
-			#self.fmin_states.append( [ supra_glottal_sequence, glottal_sequence ] )
 			log = []
 			log.append( 'Step: {: <{}}'.format( self.step, len( str( self.max_synthesis_steps ) ) + 1 ) )
-			#log.append( 'phoneme loss: {: <{}}'.format( f'{total_phoneme_loss:.5f}', 10 ) )
 			if self.n_phoneme_contributions > 1:
 				log.append(
 					'phoneme loss: {: <{}}'.format( f'{total_phoneme_loss:.5f}', 10 ) +
@@ -756,16 +596,7 @@ class Agent():
 					', '.join( [ '{}: {: <{}}'.format( x.phoneme_identity, f'{y:.5f}', 10 ) for x, y in zip( self.optimization_states, visual_losses ) ] ) +
 					')'
 					)
-			#log.append( 'effort loss: {: <{}}'.format( f'{effort_loss:.5f}', 10 ) )
-			#log.append( 'category loss: {}'.format(category_losses) )
-			#print( 'Synthesis step: {} — phoneme loss: {} () — visual_loss: {} — effort loss: {}'.format(
-			#	self.step, total_phoneme_loss, visual_loss, effort_loss
-			#	)
-			#)
 			print( ' — '.join( log ) )
-			#print( 'new min' )
-			#print( supra_glottal_states )
-			#print( glottal_states )
 		self.step += 1
 		return total_loss
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -780,7 +611,7 @@ def demo(
 	optimization = dict(
 		optimization_policy = whale_optimization_algorithm,
 		optimization_policy_kw = dict(
-			hunting_party = 200, # 200 for vowels #300 for cons currently
+			hunting_party = 200,
 			iterations = 500000,
 			spiral_param = 0.5,
 			verbose = False,
@@ -800,8 +631,8 @@ def demo(
 					supra_glottal_duration = 0.05
 				state = 'optimize'
 			else:
-				supra_glottal_duration = 0.15
-				#supra_glottal_duration = 0.225 # for voiceless sounds because of voice onset time
+				#supra_glottal_duration = 0.15
+				supra_glottal_duration = 0.225 # for voiceless sounds because of voice onset time
 				#state = 'vtl_preset'
 				state = trailing_states
 			optimization_states.append(
@@ -840,41 +671,19 @@ if __name__ == '__main__':
 	parser.add_argument( '--range', metavar='range', type=int, nargs='+', help='range integers' )
 	args = parser.parse_args()
 
-	#demo( optimize_units = [ [ 'b', 'a' ], ], runs = [ x for x in range( 0, 10 ) ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
-	demo(
-		optimize_units = [ [ 'b', 'a' ], ],
-		runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
-		synthesis_steps = 1000,
-		out_path = 'results/CONSONANTS_VISUAL_A/',
-		include_visual_information = True,
-		trailing_states = 'optimized_preset',
-		)
-
-
-	stop
 	demo(
 		optimize_units = [ [ 'a' ], [ 'e' ], [ 'i' ], [ 'o' ], [ 'u' ], [ 'E' ], [ '2' ], [ 'y' ], ],
 		runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
-		synthesis_steps = 1000,
-		out_path = 'results/VOWELS_VISUAL/',
-		include_visual_information = True,
+		synthesis_steps = 10,
+		out_path = 'results/demo/',
+		include_visual_information = False,
 		)
-	#demo(
-	#	optimize_units = [ [ 'd', 'i' ], ],
-	#	runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
-	#	synthesis_steps = 1000,
-	#	out_path = 'demo_run/CONSONANT_EXTCONSTR_TEST/',
-	#	include_visual_information = False,
-	#	)
-	#demo_print( optimize_units = [ [ 'z', 'i' ], [ 'n', 'i' ] ], runs = [ 0 ], synthesis_steps = 1000, out_path = 'demo_test/CONSONANT_VTL_PRESET_VOWELS/' )
-	#ag = load( 'demo/CONSONANT_VTL_PRESET_VOWELS/woa/e/15/agent.pkl.gzip')
-	#print(ag)
-	#category_data = load( 'demo/CONSONANT_VTL_PRESET_VOWELS/woa/e/15/log_category_data.pkl.gzip')
-	#print( category_data[ 0 ][ 'supra_glottal_sequence' ] )
-	#stop
-	#array = np.array( [ x[ 'supra_glottal_sequence' ].states.to_numpy() for x in category_data ] ).reshape( (len(category_data), 19 ) )
-	#sgs = vtl.Supra_Glottal_Sequence( array )
-	#sgs.plot_distributions()
-	#avg = vtl.Supra_Glottal_Sequence( np.reshape( np.median( array, axis = 0 ), (1,19) ) )
-	#glt = category_data[0][ 'glottal_sequence' ]
-	#ag.synthesize( avg, glt, 'testboy.wav' )
+
+	demo(
+		optimize_units = [ [ 'b', 'a' ], ],
+		runs = [ x for x in range( args.range[ 0 ], args.range[ 1 ] ) ],
+		synthesis_steps = 10,
+		out_path = 'results/demo/',
+		include_visual_information = True,
+		trailing_states = 'optimized_preset',
+		)

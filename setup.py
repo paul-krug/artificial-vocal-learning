@@ -25,7 +25,13 @@ with open('ArtificialVocalLearning/__init__.py') as f:
             continue
 
 # Dependencies
-DEPENDENCIES = []
+DEPENDENCIES = [
+    'numpy',
+    'pyMetaheuristic',
+    'tensorflow>=2.8'
+    'tools_io>=0.1',
+    'VocalTractLab==0.4.19',
+]
 
 CLASSIFIERS = """
 Development Status :: 3 - Alpha

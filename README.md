@@ -35,7 +35,7 @@ demo(
     synthesis_steps = 1000,
     out_path = 'results/demo/',
     include_visual_information = False,
-		trailing_states = 'optimized_preset',
+    trailing_states = 'optimized_preset',
     )
 ```
 

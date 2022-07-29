@@ -58,7 +58,6 @@ setup_args = dict(
     #download_url=,
     author='Paul Krug',
     author_email='paul_konstantin.krug@tu-dresden.de',
-    license='MIT',
     classifiers = [_f for _f in CLASSIFIERS.split('\n') if _f],
     keywords=[ 'vocal learning', 'simulation', 'Python' ],
     packages=find_packages(),

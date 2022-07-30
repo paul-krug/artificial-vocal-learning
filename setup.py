@@ -71,6 +71,7 @@ setup_args = dict(
         os.path.join( WORKING_PATH, 'ArtificialVocalLearning/models/RUN_2_tr_KIEL_BITS_te_VTL/weights_best/*'),
         ]
     },
+    include_package_data = True,
     install_requires=DEPENDENCIES,
     zip_safe= True,
 )

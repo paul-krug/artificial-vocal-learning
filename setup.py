@@ -29,8 +29,8 @@ DEPENDENCIES = [
     'numpy',
     'pyloudnorm',
     'pyMetaheuristic',
-    'tensorflow>=2.8'
-    'tools_io>=0.1',
+    'tensorflow>=2.8',
+    'tools-io>=0.1',
     'VocalTractLab==0.4.23',
 ]
 

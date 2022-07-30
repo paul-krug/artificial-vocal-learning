@@ -15,11 +15,11 @@ from tensorflow.keras.backend import one_hot
 
 from sklearn.metrics import mean_squared_error
 
-from phoneme_recognition import preprocess
-from phoneme_classes import sequence_encoder, sequence_decoder
-from phoneme_recognition import single_phoneme_recognition_model
-from visual_measurements import get_visual_data
-from learned_states import get_learned_state
+from ArtificialVocalLearning.phoneme_recognition import preprocess
+from ArtificialVocalLearning.phoneme_classes import sequence_encoder, sequence_decoder
+from ArtificialVocalLearning.phoneme_recognition import single_phoneme_recognition_model
+from ArtificialVocalLearning.visual_measurements import get_visual_data
+from ArtificialVocalLearning.learned_states import get_learned_state
 
 from pyMetaheuristic.algorithm import sine_cosine_algorithm
 from pyMetaheuristic.algorithm import simulated_annealing

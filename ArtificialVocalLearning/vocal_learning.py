@@ -417,7 +417,7 @@ class Agent():
 		phoneme_recognition_states = []
 		for audio_segment, x in zip( audio_segments, self.optimization_states ):
 			X_input = preprocess( audio_in = audio_segment )
-			y_pred = self.phoneme_recognition_model.predict( X_input )[0]
+			y_pred = self.phoneme_recognition_model.predict( X_input, verbose=0 )[0]
 			phoneme_recognition_states.append( y_pred )
 			y_true = x.phoneme_state
 			phoneme_losses.append( self.phoneme_loss_function( y_true, y_pred ).numpy() )

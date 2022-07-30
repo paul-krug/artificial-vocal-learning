@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="286.59344mm"
+   height="18.461578mm"
+   viewBox="0 0 286.59344 18.461578"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   sodipodi:docname="Zeichnung.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="0.58083614"
+     inkscape:cx="572.45061"
+     inkscape:cy="250.50094"
+     inkscape:window-width="1600"
+     inkscape:window-height="837"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1-5" />
+  <defs
+     id="defs2">
+    <rect
+       x="-304.73309"
+       y="234.1452"
+       width="168.72227"
+       height="204.87706"
+       id="rect81022" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient36880">
+      <stop
+         style="stop-color:#ff00ff;stop-opacity:1"
+         offset="0"
+         id="stop36874" />
+      <stop
+         style="stop-color:#ffff00;stop-opacity:1"
+         offset="0.70888382"
+         id="stop36876" />
+      <stop
+         style="stop-color:#ffff00;stop-opacity:1"
+         offset="1"
+         id="stop36878" />
+    </linearGradient>
+    <rect
+       x="289.46548"
+       y="680.04456"
+       width="1320.392"
+       height="177.79642"
+       id="rect15614" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient36880"
+       id="linearGradient32821"
+       x1="874.82794"
+       y1="889.35742"
+       x2="833.77441"
+       y2="519.20129"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(25.511154,-79.363235)">
+    <g
+       inkscape:label="Ebene 1"
+       id="layer1-5"
+       transform="translate(18.637554,-45.552147)">
+      <text
+         xml:space="preserve"
+         transform="matrix(0.26458333,0,0,0.26458333,-120.73628,-59.710494)"
+         id="text15612"
+         style="font-style:normal;font-weight:normal;font-size:96px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect15614);fill:url(#linearGradient32821);fill-opacity:1;stroke:none"><tspan
+           x="289.46484"
+           y="766.51735"
+           id="tspan83627"><tspan
+             style="font-weight:bold;font-family:Arial;-inkscape-font-specification:'Arial Bold'"
+             id="tspan83613">A</tspan><tspan
+             style="font-size:74.6667px"
+             id="tspan83615">RTIFICIAL</tspan><tspan
+             style="font-weight:bold;font-family:Arial;-inkscape-font-specification:'Arial Bold'"
+             id="tspan83617">V</tspan><tspan
+             style="font-size:74.6667px"
+             id="tspan83619">OCAL</tspan><tspan
+             style="font-weight:bold;font-family:Arial;-inkscape-font-specification:'Arial Bold'"
+             id="tspan83621">L</tspan><tspan
+             style="font-size:74.6667px"
+             id="tspan83623">EARNING</tspan><tspan
+             style="font-weight:bold;font-family:Arial;-inkscape-font-specification:'Arial Bold'"
+             id="tspan83625"> </tspan></tspan></text>
+      <text
+         xml:space="preserve"
+         transform="matrix(0.26458333,0,0,0.26458333,-18.637554,45.552147)"
+         id="text81020"
+         style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect81022);fill:#000000;fill-opacity:1;stroke:none" />
+    </g>
+  </g>
+</svg>

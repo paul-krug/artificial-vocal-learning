@@ -65,7 +65,7 @@ setup_args = dict(
     keywords=[ 'vocal learning', 'simulation', 'Python' ],
     packages=find_packages(),
     package_dir={'artificial-vocal-learning': 'ArtificialVocalLearning'},
-    package_data= {'artificial-vocal-learning': [ 
+    package_data= {'ArtificialVocalLearning': [ 
         os.path.join( WORKING_PATH, 'ArtificialVocalLearning/models/*'),
         os.path.join( WORKING_PATH, 'ArtificialVocalLearning/models/RUN_2_tr_KIEL_BITS_te_VTL/*'),
         os.path.join( WORKING_PATH, 'ArtificialVocalLearning/models/RUN_2_tr_KIEL_BITS_te_VTL/weights_best/*'),

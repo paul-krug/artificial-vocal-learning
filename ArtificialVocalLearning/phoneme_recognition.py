@@ -108,7 +108,7 @@ def single_phoneme_recognition_model( phoneme_model_save_dir = 'models/RUN_2_tr_
 		n_classes = len( classes ),
 		compile_model = True,
 		)
-	checkpoint_filepath = os.path.join( phoneme_model_save_dir, 'weights_best', 'checkpoint' )
+	checkpoint_filepath = os.path.join( os.path.dirname( __file__ ), phoneme_model_save_dir, 'weights_best', 'checkpoint' )
 	phoneme_recognition_model.load_weights( checkpoint_filepath )
 	return phoneme_recognition_model
 #---------------------------------------------------------------------------------------------------------------------------------------------------#

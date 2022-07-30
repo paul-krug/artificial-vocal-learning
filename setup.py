@@ -27,6 +27,7 @@ with open('ArtificialVocalLearning/__init__.py') as f:
 # Dependencies
 DEPENDENCIES = [
     'numpy',
+    'pyloudnorm',
     'pyMetaheuristic',
     'tensorflow>=2.8'
     'tools_io>=0.1',

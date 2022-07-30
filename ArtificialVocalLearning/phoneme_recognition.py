@@ -12,9 +12,9 @@ import librosa
 from copy import deepcopy
 import pyloudnorm as pyln
 from itertools import chain
-import NN
-from phoneme_classes import classes
-from phoneme_classes import sequence_encoder, sequence_decoder
+from ArtificialVocalLearning.NN import GRU_Model_Large
+from ArtificialVocalLearning.phoneme_classes import classes
+from ArtificialVocalLearning.phoneme_classes import sequence_encoder, sequence_decoder
 
 #app = Flask( __name__ )
 
@@ -102,7 +102,7 @@ def preprocess( audio_in ):
 	return X
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 def single_phoneme_recognition_model( phoneme_model_save_dir = 'models/RUN_2_tr_KIEL_BITS_te_VTL' ):
-	phoneme_recognition_model = NN.GRU_Model_Large(
+	phoneme_recognition_model = GRU_Model_Large(
 		time_dim = feature_dimension[0],
 		freq_dim = feature_dimension[1],
 		n_classes = len( classes ),

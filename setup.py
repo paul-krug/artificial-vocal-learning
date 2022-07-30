@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 
-
+import os
 import sys
 import logging
 from setuptools import setup, find_packages
 
+
+WORKING_PATH = os.getcwd()
 
 # Set up the logging environment
 logging.basicConfig()

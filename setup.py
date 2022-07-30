@@ -33,7 +33,7 @@ DEPENDENCIES = [
     'pyMetaheuristic',
     'tensorflow>=2.8',
     'tools-io>=0.1',
-    'VocalTractLab==0.4.23',
+    'VocalTractLab==0.4.24',
 ]
 
 CLASSIFIERS = """

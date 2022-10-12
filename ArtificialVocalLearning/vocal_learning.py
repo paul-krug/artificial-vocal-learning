@@ -15,11 +15,18 @@ from tensorflow.keras.backend import one_hot
 
 from sklearn.metrics import mean_squared_error
 
-from ArtificialVocalLearning.phoneme_recognition import preprocess
-from ArtificialVocalLearning.phoneme_classes import sequence_encoder, sequence_decoder
-from ArtificialVocalLearning.phoneme_recognition import single_phoneme_recognition_model
-from ArtificialVocalLearning.visual_measurements import get_visual_data
-from ArtificialVocalLearning.learned_states import get_learned_state
+#from ArtificialVocalLearning.phoneme_recognition import preprocess, preprocess_list
+#from ArtificialVocalLearning.phoneme_classes import sequence_encoder, sequence_decoder
+#from ArtificialVocalLearning.phoneme_recognition import single_phoneme_recognition_model, tri_phone_recognition_model
+#from ArtificialVocalLearning.visual_measurements import get_visual_data
+#from ArtificialVocalLearning.learned_states import get_learned_state
+
+from phoneme_recognition import preprocess, preprocess_list
+from phoneme_classes import sequence_encoder, sequence_decoder
+from phoneme_recognition import single_phoneme_recognition_model, tri_phone_recognition_model
+from visual_measurements import get_visual_data
+from learned_states import get_learned_state
+from phoneme_classes import classes
 
 from pyMetaheuristic.algorithm import sine_cosine_algorithm
 from pyMetaheuristic.algorithm import simulated_annealing
@@ -49,7 +56,7 @@ from tools_io import save, load
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
-
+vtl.load_speaker_file( 'C:\\Users\\Locke\\Documents\\Development\\VocalTractLab\\VocalTractLab\\speaker\\female_12_years_0_months.speaker' )
 
 class EarlyStoppingException( Exception ): pass
 
@@ -74,13 +81,17 @@ class Optimization_State():
 		):
 		self.phoneme_identity = phoneme_identity
 		self.phoneme_name = phoneme_name
-		self.phoneme_state = np.array( [ one_hot( x, 37 ) for x in sequence_encoder( [ phoneme_identity ] ) ] ).reshape( (37,) )
+		self.phoneme_state = np.array( [ one_hot( x, len( classes ) ) for x in sequence_encoder( [ phoneme_identity ] ) ] ).reshape( ( len( classes ), ) )
 		self.constriction = constriction
 		self.optimize_glottis = optimize_glottis
 		self.optimize_glottal_parameters = []
 		self.optimize_supra_glottal_parameters = optimize_supra_glottal_parameters
 		if isinstance( supra_glottal_base_state, str ):
-			self.supra_glottal_base_state = vtl.get_shape( supra_glottal_base_state )
+			try:
+				self.supra_glottal_base_state = vtl.get_shape( supra_glottal_base_state )
+			except ValueError:
+				print( 'Base state not available in speaker file, using standard state instead.' )
+				self.supra_glottal_base_state = vtl.Supra_Glottal_Sequence( vtl.get_param_info( 'tract' )[ 'standard' ].to_numpy( dtype = float ).reshape( (1, 19) ) )
 		else:
 			self.supra_glottal_base_state = vtl.Supra_Glottal_Sequence( np.reshape( np.array( supra_glottal_base_state ), ( 1, 19 ) ) )
 		if isinstance( glottal_base_state, str ):
@@ -407,6 +418,20 @@ class Agent():
 		self._finalize_run( elapsed_time )
 		return
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
+	def tri_phoneme_loss(
+		self,
+		audio_list, #list of dicts
+		):
+		#phoneme_losses
+		X_input = preprocess_list( audio_list_in = audio_list, feature_dimension = ( 200, 80 ) )
+		y_pred = self.phoneme_recognition_model.predict( X_input, verbose = 0 )[0]
+		y_true = np.array( [ x.phoneme_state for x in self.optimization_states ] )
+		phoneme_recognition_states = y_pred
+		phoneme_losses = [ self.phoneme_loss_function( y_p, y_t ).numpy() for y_p, y_t in zip( y_pred, y_true ) ]
+		category_losses = [ 0 if np.argmax( y_p ) == np.argmax( y_t ) else 1 for y_p, y_t in zip( y_pred, y_true ) ]
+		print( phoneme_losses )
+		return phoneme_losses, category_losses, phoneme_recognition_states
+#---------------------------------------------------------------------------------------------------------------------------------------------------#
 	def calculate_phoneme_losses(
 		self,
 		audio_in,
@@ -499,7 +524,13 @@ class Agent():
 			for param_index, parameter in enumerate( parameters ):
 				supra_glottal_states[ state_index ].states.loc[ 0, parameter ] = parameters_queries[ param_index ]
 			prev_index = prev_index + len( parameters )
-
+		#for sgs_state in supra_glottal_states:
+		#	print( vtl.get_constants() )
+		#	print( sgs_state )
+		#	for state in sgs_state.states.to_numpy():
+		#		print( state)
+		#	stop
+		#constriction_loss = 0 #
 		constriction_loss = self.calculate_constriction_loss( supra_glottal_states )
 		if constriction_loss != 0:
 			return constriction_loss
@@ -519,6 +550,7 @@ class Agent():
 				else:
 					XB = 0.1
 					RA = 0.0
+				glottal_states[ state_index ].states.loc[ 0, 'F0' ] = 180
 				glottal_states[ state_index ].states.loc[ 0, 'XB' ] = XB
 				glottal_states[ state_index ].states.loc[ 0, 'XT' ] = XB
 				glottal_states[ state_index ].states.loc[ 0, 'CA' ] = XB
@@ -531,7 +563,7 @@ class Agent():
 		motor_score_list = self.get_motor_score( supra_glottal_sequence, glottal_sequence )
 		audio_signal = vtl.tract_sequence_to_audio( motor_score_list, save_file = False, return_data = True, sr = 16000 )[0]
 
-		phoneme_losses, category_losses, phoneme_recognition_states = self.calculate_phoneme_losses( audio_signal )
+		phoneme_losses, category_losses, phoneme_recognition_states = self.tri_phoneme_loss( [ audio_signal ] ) #self.calculate_phoneme_losses( audio_signal )
 
 		total_phoneme_loss = np.sum( phoneme_losses )
 		total_visual_loss = np.sum( visual_losses )
@@ -619,7 +651,8 @@ def demo(
 		name = 'woa',
 		)
 	cce = CategoricalCrossentropy()
-	phoneme_recognition_model = single_phoneme_recognition_model()
+	#phoneme_recognition_model = single_phoneme_recognition_model( feature_dimension = [ 125, 80 ] )
+	phoneme_recognition_model = tri_phone_recognition_model( feature_dimension = [ 200, 80 ] )
 	simulations = []
 	for unit in optimize_units:
 		optimization_states = []
@@ -630,11 +663,15 @@ def demo(
 				else:
 					supra_glottal_duration = 0.05
 				state = 'optimize'
+			elif index == 1:
+				supra_glottal_duration = 0.15
+				state = 'optimize'
 			else:
-				#supra_glottal_duration = 0.15
-				supra_glottal_duration = 0.225 # for voiceless sounds because of voice onset time
+				supra_glottal_duration = 0.15
+				#supra_glottal_duration = 0.225 # for voiceless sounds because of voice onset time
 				#state = 'vtl_preset'
 				state = trailing_states
+				state = 'optimize'
 			optimization_states.append(
 				Optimization_State.from_standard_parameters(
 					phoneme = phoneme,
@@ -670,6 +707,15 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser( description='Process some integers.' )
 	parser.add_argument( '--range', metavar='range', type=int, nargs='+', help='range integers' )
 	args = parser.parse_args()
+
+	demo(
+		optimize_units = [ [ 'a', 'n', 'a' ], [ 'i', 'n', 'i' ] ],
+		runs = [ 0 ],
+		synthesis_steps = 100,
+		out_path = 'results/demo_3_phone_female_12/',
+		include_visual_information = False,
+		)
+	stop
 
 	demo(
 		optimize_units = [ [ 'a' ], [ 'e' ], [ 'i' ], [ 'o' ], [ 'u' ], [ 'E' ], [ '2' ], [ 'y' ], ],

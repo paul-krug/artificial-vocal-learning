@@ -12,6 +12,28 @@ import numpy as np
 
 
 
+def GRU_encoder_decoder( time_dim, freq_dim, n_classes, compile_model = False ):
+	inputs = keras.Input( shape=( time_dim, freq_dim ) )
+	x = inputs
+	x = layers.Masking( mask_value=[ 0 ], input_shape=( time_dim, freq_dim ) )( inputs )
+	x = layers.BatchNormalization()( x )
+	x = layers.Bidirectional( layers.GRU( 256, activation= 'tanh', return_sequences=True ) )( x )
+	x = layers.Bidirectional( layers.GRU( 256, activation= 'tanh', return_sequences=False ) )( x )
+	x = layers.RepeatVector( 3 )( x )
+	x = layers.Bidirectional( layers.GRU( 256, activation= 'tanh', return_sequences=True ) )( x )
+	outputs = layers.TimeDistributed( layers.Dense( n_classes, activation = 'softmax' ) )( x )
+	model = keras.Model( inputs, outputs , name = 'GRU_encoder_decoder' )
+	print( model.summary() )
+	#optimizer = keras.optimizers.Adam( learning_rate = 0.001 )
+	if compile_model:
+		model.compile(
+			loss="sparse_categorical_crossentropy",
+			optimizer=keras.optimizers.Adam(learning_rate=1e-4),
+			metrics=["sparse_categorical_accuracy"],
+		)
+	print( model.summary() )
+	return model
+
 
 def GRU_Model_Large( time_dim, freq_dim, n_classes, compile_model = False ):
 	inputs = keras.Input( shape=( time_dim, freq_dim ) )

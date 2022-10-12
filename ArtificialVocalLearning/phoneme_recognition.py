@@ -12,13 +12,17 @@ import librosa
 from copy import deepcopy
 import pyloudnorm as pyln
 from itertools import chain
-from ArtificialVocalLearning.NN import GRU_Model_Large
-from ArtificialVocalLearning.phoneme_classes import classes
-from ArtificialVocalLearning.phoneme_classes import sequence_encoder, sequence_decoder
+#from ArtificialVocalLearning.NN import GRU_Model_Large, GRU_encoder_decoder
+#from ArtificialVocalLearning.phoneme_classes import classes
+#from ArtificialVocalLearning.phoneme_classes import sequence_encoder, sequence_decoder
+
+from NN import GRU_Model_Large, GRU_encoder_decoder
+from phoneme_classes import classes
+from phoneme_classes import sequence_encoder, sequence_decoder
 
 #app = Flask( __name__ )
 
-feature_dimension = [ 125, 80 ]
+#feature_dimension = [ 125, 80 ]
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
 def fade_in_fade_out( data_in, fade_to_sample, fade_from_sample ):
@@ -101,8 +105,49 @@ def preprocess( audio_in ):
 		X[ 0, : limit, : X_feature.shape[1] ] = X_feature[ : limit, :]
 	return X
 #---------------------------------------------------------------------------------------------------------------------------------------------------#
-def single_phoneme_recognition_model( phoneme_model_save_dir = 'models/RUN_2_tr_KIEL_BITS_te_VTL' ):
+def preprocess_list( audio_list_in, feature_dimension ):
+	audio_list = [ make_audio(
+		audio = audio_in,
+		onset = np.zeros( int( 0.016 * 16000 ) ),
+		offset =  np.zeros( int( 0.016 * 16000 ) ),
+		orig_sr = 16000,
+		) for audio_in in audio_list_in ]
+	spectrogram_list = [ np.abs(
+		librosa.stft(
+			y = audio,
+			**vtl.audio_tools.standard_16kHz_spectrogram_kwargs,
+			)
+		)**2 for audio in audio_list ]
+	melspectrogram_list =[ librosa.power_to_db( 
+		librosa.feature.melspectrogram(
+			S = spectrogram,
+			**vtl.audio_tools.standard_16kHz_melspectrogram_80_kwargs,
+			)
+		) for spectrogram in spectrogram_list ]
+	#melspectrogram = librosa.power_to_db( melspectrogram )
+	X = np.zeros( ( len(audio_list), *feature_dimension ) )
+	for index, melspectrogram in enumerate( melspectrogram_list ):
+		X_feature = melspectrogram.T
+		if feature_dimension[0] < X_feature.shape[0]:
+			limit = feature_dimension[0]
+		else:
+			limit = X_feature.shape[0]
+			X[ index, : limit, : X_feature.shape[1] ] = X_feature[ : limit, :]
+	return X
+#---------------------------------------------------------------------------------------------------------------------------------------------------#
+def single_phoneme_recognition_model( feature_dimension, phoneme_model_save_dir = 'models/RUN_2_tr_KIEL_BITS_te_VTL' ):
 	phoneme_recognition_model = GRU_Model_Large(
+		time_dim = feature_dimension[0],
+		freq_dim = feature_dimension[1],
+		n_classes = len( classes ),
+		compile_model = True,
+		)
+	checkpoint_filepath = os.path.join( os.path.dirname( __file__ ), phoneme_model_save_dir, 'weights_best', 'checkpoint' )
+	phoneme_recognition_model.load_weights( checkpoint_filepath )
+	return phoneme_recognition_model
+#---------------------------------------------------------------------------------------------------------------------------------------------------#
+def tri_phone_recognition_model( feature_dimension, phoneme_model_save_dir = 'models/GRU_encoder_decoder' ):
+	phoneme_recognition_model = GRU_encoder_decoder(
 		time_dim = feature_dimension[0],
 		freq_dim = feature_dimension[1],
 		n_classes = len( classes ),
